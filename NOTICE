@@ -1,0 +1,16 @@
+Error Monitoring Platform (monitor-service + monitor-sdk)
+Copyright (c) 2026 Monitoring Team
+
+This project is licensed under the GNU Affero General Public License v3.0
+(or any later version), see the LICENSE file for full text.
+
+Third-party components are used under their own licenses, including but not limited to:
+- FastAPI (MIT)
+- Uvicorn (BSD-3-Clause)
+- Pydantic / pydantic-settings (MIT)
+- SQLAlchemy / Alembic (MIT)
+- aiohttp (Apache-2.0)
+- requests (Apache-2.0)
+
+No trademark rights are granted by this NOTICE.
+Project name, logos, and brand assets may be subject to separate trademark rules.
