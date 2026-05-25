@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  monitor-service:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      MONITOR_DB_PATH: /app/data/monitor.db
+    volumes:
+      - sqlite_data:/app/data
+
+volumes:
+  sqlite_data:
