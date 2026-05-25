@@ -80,7 +80,7 @@ pip install "git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
 Пин на релизный тег:
 
 ```bash
-pip install "git+https://github.com/<ORG>/<REPO>.git@sdk-v0.1.0#subdirectory=sdk"
+pip install "git+https://github.com/<ORG>/<REPO>.git@sdk-v0.1.1#subdirectory=sdk"
 ```
 
 ### Вариант B: локальная установка

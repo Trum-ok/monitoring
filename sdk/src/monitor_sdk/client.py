@@ -1,9 +1,10 @@
-import types
 import hashlib
 import json
 import threading
 import traceback
+import types
 from urllib.parse import urljoin
+
 import requests
 
 
@@ -17,15 +18,9 @@ class MonitorClient:
         self.dsn = dsn
         self.service_name = service_name
 
-    def _generate_signature(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
-        """Build stable hash from the deepest traceback frame.
-
-        The signature source is ``filename:lineno:funcname`` from the last frame in traceback.
-        If traceback is missing, fallback string uses exception type name.
-        """
+    def _extract_signature_source(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
         if exc_tb is None:
-            source = f"unknown:0:{exc_type.__name__}"
-            return hashlib.sha256(source.encode("utf-8")).hexdigest()
+            return f"unknown:0:{exc_type.__name__}"
 
         last_tb = exc_tb
         while last_tb.tb_next is not None:
@@ -35,7 +30,10 @@ class MonitorClient:
         filename = frame.f_code.co_filename
         lineno = last_tb.tb_lineno
         funcname = frame.f_code.co_name
-        source = f"{filename}:{lineno}:{funcname}"
+        return f"{filename}:{lineno}:{funcname}"
+
+    def _generate_signature(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
+        source = self._extract_signature_source(exc_type, exc_tb)
         return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
     def _build_traceback_preview(
@@ -56,7 +54,6 @@ class MonitorClient:
         try:
             requests.post(self._ingest_url(), json=payload, timeout=2.0)
         except Exception:
-            # Intentionally swallow SDK transport errors in crash path.
             return
 
     def capture_exception(
@@ -65,14 +62,11 @@ class MonitorClient:
         exc_value: BaseException,
         exc_tb: types.TracebackType | None,
     ) -> None:
-        """Capture and send exception event in fire-and-forget mode.
-
-        Payload fields match monitor-service ingest schema:
-        ``signature_hash``, ``exc_type``, ``message``, ``traceback_preview``.
-        """
+        signature_source = self._extract_signature_source(exc_type, exc_tb)
         signature_hash = self._generate_signature(exc_type, exc_tb)
         payload = {
             "signature_hash": signature_hash,
+            "signature_source": signature_source,
             "exc_type": exc_type.__name__,
             "message": str(exc_value),
             "traceback_preview": self._build_traceback_preview(exc_type, exc_value, exc_tb),

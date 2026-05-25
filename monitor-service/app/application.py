@@ -25,7 +25,7 @@ class Application:
             queue_maxsize=self.settings.tg_queue_maxsize,
         )
         self.app = FastAPI(
-            'Monitoring service',
+            title="Monitoring service",
             version='1.0.0',
             lifespan=self.lifespan
         )
@@ -52,7 +52,7 @@ class Application:
 
 
     @asynccontextmanager
-    async def lifespan(self):
+    async def lifespan(self, app: FastAPI):
         await self.on_startup()
         yield
         await self.on_shutdown()

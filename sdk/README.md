@@ -13,7 +13,7 @@ pip install "git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
 Pin to release tag:
 
 ```bash
-pip install "git+https://github.com/<ORG>/<REPO>.git@sdk-v0.1.0#subdirectory=sdk"
+pip install "git+https://github.com/<ORG>/<REPO>.git@sdk-v0.1.1#subdirectory=sdk"
 ```
 
 From local source:
