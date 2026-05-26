@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
 
 
 class Settings(BaseSettings):
@@ -14,6 +15,7 @@ class Settings(BaseSettings):
         tg_retry_backoff_max_sec: Upper bound for retry sleep duration.
         tg_parse_mode: Parse mode used in Telegram ``sendMessage`` requests.
         tg_queue_maxsize: Bounded in-memory queue size for pending alerts.
+        tg_max_traceback_chars: Max traceback characters in Telegram alerts (capped at 2048).
         alert_cooldown_minutes: Cooldown window for re-sending alerts for the same signature.
     """
 
@@ -26,6 +28,7 @@ class Settings(BaseSettings):
     tg_retry_backoff_max_sec: float = 30.0
     tg_parse_mode: str = "HTML"
     tg_queue_maxsize: int = 1000
+    tg_max_traceback_chars: int = Field(default=1200, ge=128, le=2048)
     alert_cooldown_minutes: int = 30
 
     model_config = SettingsConfigDict(env_prefix="MONITOR_", env_file=".env", extra="ignore")

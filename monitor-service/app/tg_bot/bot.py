@@ -1,4 +1,5 @@
 import asyncio
+from functools import cached_property
 import logging
 from typing import Any
 
@@ -19,6 +20,7 @@ class TelegramBot:
         retry_backoff_max_sec: float,
         parse_mode: str,
         queue_maxsize: int,
+        max_traceback_chars: int,
     ):
         self.app = app
         self.token = token
@@ -28,12 +30,13 @@ class TelegramBot:
         self.max_retries = max_retries
         self.retry_backoff_max_sec = retry_backoff_max_sec
         self.parse_mode = parse_mode
+        self.max_traceback_chars = max(1, min(max_traceback_chars, 2048))
         self.session: aiohttp.ClientSession | None = None
         self.queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=queue_maxsize)
         self.worker_task: asyncio.Task[None] | None = None
         self.logger = logging.getLogger(__name__)
 
-    @property
+    @cached_property
     def base_url(self) -> str:
         return f"https://api.telegram.org/bot{self.token}/"
 
@@ -55,7 +58,10 @@ class TelegramBot:
         try:
             while True:
                 payload = await self.queue.get()
-                text = str(payload.get("text", "")) or build_error_alert_message(payload)
+                text = str(payload.get("text", "")) or build_error_alert_message(
+                    payload,
+                    max_traceback_chars=self.max_traceback_chars,
+                )
                 chat_id = int(payload.get("chat_id", self.chat_id))
                 parse_mode = str(payload.get("parse_mode", self.parse_mode))
 

@@ -23,6 +23,7 @@ class Application:
             retry_backoff_max_sec=self.settings.tg_retry_backoff_max_sec,
             parse_mode=self.settings.tg_parse_mode,
             queue_maxsize=self.settings.tg_queue_maxsize,
+            max_traceback_chars=self.settings.tg_max_traceback_chars,
         )
         self.app = FastAPI(
             title="Monitoring service",
