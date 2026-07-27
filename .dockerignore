@@ -1,0 +1,17 @@
+.git/
+.idea/
+.ruff_cache/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.db
+LICENSE
+NOTICE
+RELEASE.md
+sdk/src/
+sdk/README.md
+monitor-service/deploy/.env

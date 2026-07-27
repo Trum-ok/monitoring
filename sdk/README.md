@@ -7,19 +7,25 @@ Python SDK for sending exceptions to monitor-service.
 From GitHub repository:
 
 ```bash
-pip install "git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
+uv add "monitor-sdk @ git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
 ```
 
 Pin to release tag:
 
 ```bash
-pip install "git+https://github.com/<ORG>/<REPO>.git@sdk-v0.1.1#subdirectory=sdk"
+uv add "monitor-sdk @ git+https://github.com/<ORG>/<REPO>.git@sdk-v0.1.1#subdirectory=sdk"
 ```
 
 From local source:
 
 ```bash
-pip install .
+uv add ./sdk
+```
+
+Without uv:
+
+```bash
+pip install "git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
 ```
 
 ## Usage
