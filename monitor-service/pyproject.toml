@@ -3,8 +3,9 @@ name = "monitor-service"
 version = "0.1.0"
 description = "Error monitoring service with Telegram alerts"
 readme = "../README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 license = "AGPL-3.0-or-later"
+
 dependencies = [
     "fastapi>=0.111.0,<1.0.0",
     "uvicorn[standard]>=0.30.0,<1.0.0",

@@ -7,11 +7,12 @@ name = "monitor-sdk"
 version = "0.1.1"
 description = "Lightweight Python SDK for monitor-service"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 license = "AGPL-3.0-or-later"
 authors = [
   { name = "Monitoring Team" }
 ]
+
 dependencies = [
   "requests>=2.32.0,<3.0.0"
 ]
