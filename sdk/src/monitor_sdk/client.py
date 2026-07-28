@@ -85,7 +85,7 @@ class MonitorClient:
         exc_tb: types.TracebackType | None,
     ) -> str:
         rendered = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-        return rendered[:self.max_traceback_chars]
+        return rendered[-self.max_traceback_chars:]
 
     @cached_property
     def _ingest_url(self) -> str:
