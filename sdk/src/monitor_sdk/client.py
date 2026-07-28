@@ -52,9 +52,14 @@ class MonitorClient:
         base = self.dsn.rstrip("/") + "/"
         return urljoin(base, "api/errors")
 
-    def _post_payload(self, payload: dict[str, str]) -> None:
+    def _post_payload(self, body: bytes) -> None:
         try:
-            requests.post(self._ingest_url, json=payload, timeout=2.0)
+            requests.post(
+                self._ingest_url,
+                data=body,
+                headers={"Content-Type": "application/json"},
+                timeout=2.0,
+            )
         except Exception:
             return
 
@@ -74,6 +79,6 @@ class MonitorClient:
             "traceback_preview": self._build_traceback_preview(exc_type, exc_value, exc_tb),
         }
 
-        json.dumps(payload)
-        thread = threading.Thread(target=self._post_payload, args=(payload,), daemon=True)
+        body = json.dumps(payload).encode("utf-8")
+        thread = threading.Thread(target=self._post_payload, args=(body,), daemon=True)
         thread.start()
