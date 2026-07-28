@@ -4,12 +4,49 @@ import threading
 import traceback
 import types
 import logging
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 from functools import cached_property
 
 import requests
 
 logger = logging.getLogger("monitor_sdk")
+
+ALLOWED_DSN_SCHEMES = frozenset({"http", "https"})
+
+
+def validate_dsn(dsn: str) -> str:
+    if not isinstance(dsn, str):
+        raise TypeError(f"dsn must be a str, got {type(dsn).__name__}")
+
+    value = dsn.strip()
+    if not value:
+        raise ValueError("dsn must be a non-empty string")
+
+    try:
+        parts = urlsplit(value)
+    except ValueError as exc:
+        raise ValueError(f"dsn is not a valid URL: {value!r} ({exc})") from None
+
+    if parts.scheme not in ALLOWED_DSN_SCHEMES:
+        raise ValueError(
+            f"dsn must use one of schemes {sorted(ALLOWED_DSN_SCHEMES)}, got {parts.scheme or None!r}: {value!r}"
+        )
+
+    try:
+        port = parts.port
+    except ValueError as exc:
+        raise ValueError(f"dsn contains an invalid port: {value!r} ({exc})") from None
+
+    if port is not None and not 1 <= port <= 65535:
+        raise ValueError(f"dsn port must be in range 1-65535, got {port}: {value!r}")
+
+    if not parts.hostname:
+        raise ValueError(f"dsn must contain a host: {value!r}")
+
+    if parts.query or parts.fragment:
+        raise ValueError(f"dsn must not contain a query string or fragment: {value!r}")
+
+    return value
 
 
 class MonitorClient:
@@ -19,7 +56,7 @@ class MonitorClient:
             dsn: Base URL of monitor-service (for example, ``http://localhost:8000``).
             service_name: Logical source service identifier used in local diagnostics.
         """
-        self.dsn = dsn
+        self.dsn = validate_dsn(dsn)
         self.service_name = service_name
         self.max_traceback_chars = max_traceback_chars
 
