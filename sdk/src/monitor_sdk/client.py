@@ -4,6 +4,7 @@ import threading
 import traceback
 import types
 from urllib.parse import urljoin
+from functools import cached_property
 
 import requests
 
@@ -46,13 +47,14 @@ class MonitorClient:
         rendered = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
         return rendered[:max_chars]
 
+    @cached_property
     def _ingest_url(self) -> str:
         base = self.dsn.rstrip("/") + "/"
         return urljoin(base, "api/errors")
 
     def _post_payload(self, payload: dict[str, str]) -> None:
         try:
-            requests.post(self._ingest_url(), json=payload, timeout=2.0)
+            requests.post(self._ingest_url, json=payload, timeout=2.0)
         except Exception:
             return
 
