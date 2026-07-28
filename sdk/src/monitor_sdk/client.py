@@ -3,10 +3,13 @@ import json
 import threading
 import traceback
 import types
+import logging
 from urllib.parse import urljoin
 from functools import cached_property
 
 import requests
+
+logger = logging.getLogger("monitor_sdk")
 
 
 class MonitorClient:
@@ -54,14 +57,16 @@ class MonitorClient:
 
     def _post_payload(self, body: bytes) -> None:
         try:
-            requests.post(
+            resp = requests.post(
                 self._ingest_url,
                 data=body,
                 headers={"Content-Type": "application/json"},
                 timeout=2.0,
             )
+            if resp.status_code >= 400:
+                logger.warning("monitor ingest rejected: %s %s", resp.status_code, resp.text[:200])
         except Exception:
-            return
+            logger.warning("monitor ingest failed", exc_info=True)
 
     def capture_exception(
         self,
