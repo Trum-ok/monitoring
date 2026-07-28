@@ -13,7 +13,7 @@ logger = logging.getLogger("monitor_sdk")
 
 
 class MonitorClient:
-    def __init__(self, dsn: str, service_name: str) -> None:
+    def __init__(self, dsn: str, service_name: str, max_traceback_chars: int = 4000) -> None:
         """Create client instance.
         Args:
             dsn: Base URL of monitor-service (for example, ``http://localhost:8000``).
@@ -21,6 +21,7 @@ class MonitorClient:
         """
         self.dsn = dsn
         self.service_name = service_name
+        self.max_traceback_chars = max_traceback_chars
 
     def _extract_signature_source(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
         if exc_tb is None:
@@ -45,10 +46,9 @@ class MonitorClient:
         exc_type: type[Exception],
         exc_value: BaseException,
         exc_tb: types.TracebackType | None,
-        max_chars: int = 4000,
     ) -> str:
         rendered = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-        return rendered[:max_chars]
+        return rendered[:self.max_traceback_chars]
 
     @cached_property
     def _ingest_url(self) -> str:
