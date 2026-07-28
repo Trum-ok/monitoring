@@ -122,5 +122,5 @@ class MonitorClient:
         }
 
         body = json.dumps(payload).encode("utf-8")
-        thread = threading.Thread(target=self._post_payload, args=(body,), daemon=True)
+        thread = threading.Thread(target=self._post_payload, args=(body,), daemon=False)
         thread.start()
