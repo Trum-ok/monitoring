@@ -14,7 +14,7 @@ class ErrorsService:
         self.alert_cooldown_minutes = alert_cooldown_minutes
         self.logger = logging.getLogger(__name__)
 
-    async def upsert_error(self, error: ErrorIngestSchema) -> tuple[bool, int, str | None]:
+    async def upsert_error(self, error: ErrorIngestSchema) -> tuple[bool, int, datetime | None]:
         async with self.database.session() as session:
             self.logger.info(f"Upserting error: {error}")
 
@@ -51,11 +51,8 @@ class ErrorsService:
             row = result.one()
             current_count, last_notified_at = row
             is_new_error = current_count == 1
-            last_notified_at_iso = (
-                last_notified_at.astimezone(UTC).isoformat()
-                if isinstance(last_notified_at, datetime)
-                else None
-            )
+            if last_notified_at is not None and last_notified_at.tzinfo is None:
+                last_notified_at = last_notified_at.replace(tzinfo=UTC)
 
             self.logger.info(
                 "Error upserted signature=%s count=%s is_new=%s",
@@ -63,23 +60,12 @@ class ErrorsService:
                 current_count,
                 is_new_error,
             )
-            return is_new_error, current_count, last_notified_at_iso
+            return is_new_error, current_count, last_notified_at
 
-    def should_notify(self, is_new_error: bool, last_notified_at_iso: str | None) -> bool:
+    def should_notify(self, is_new_error: bool, last_notified_at: datetime | None) -> bool:
         """Return notification decision using configured cooldown policy."""
-        if is_new_error:
+        if is_new_error or last_notified_at is None:
             return True
-        if not last_notified_at_iso:
-            return True
-
-        try:
-            last_notified_at = datetime.fromisoformat(last_notified_at_iso)
-        except ValueError:
-            self.logger.warning("Invalid last_notified_at format: %s", last_notified_at_iso)
-            return True
-
-        if last_notified_at.tzinfo is None:
-            last_notified_at = last_notified_at.replace(tzinfo=UTC)
 
         cooldown = timedelta(minutes=self.alert_cooldown_minutes)
         return datetime.now(UTC) - last_notified_at >= cooldown
