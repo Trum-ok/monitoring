@@ -1,10 +1,9 @@
 import asyncio
-from functools import cached_property
 import logging
+from functools import cached_property
 from typing import Any
 
 import aiohttp
-
 from app.utils.message_templates import build_error_alert_message
 
 

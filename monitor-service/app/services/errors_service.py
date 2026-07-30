@@ -1,12 +1,11 @@
 import logging
-from datetime import datetime, timedelta, UTC
+import typing
+from datetime import UTC, datetime, timedelta
 
+from app.api.domain import ErrorIngestSchema
+from app.database.models import Error
 from sqlalchemy import select, update
 from sqlalchemy.dialects.sqlite import insert
-
-from app.database.models import Error
-from app.api.domain import ErrorIngestSchema
-import typing
 
 if typing.TYPE_CHECKING:
     from app.application import Application

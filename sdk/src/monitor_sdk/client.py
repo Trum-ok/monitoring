@@ -1,11 +1,11 @@
 import hashlib
 import json
+import logging
 import threading
 import traceback
 import types
-import logging
-from urllib.parse import urljoin, urlsplit
 from functools import cached_property
+from urllib.parse import urljoin, urlsplit
 
 import requests
 

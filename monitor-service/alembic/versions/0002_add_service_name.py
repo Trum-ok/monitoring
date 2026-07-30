@@ -1,8 +1,7 @@
 from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 revision: str = "0002_add_service_name"
 down_revision: str | Sequence[str] | None = "0001_create_errors_table"

@@ -1,11 +1,12 @@
-from fastapi import FastAPI
-from app.database.db import Database
-from app.utils.config import Settings
-from contextlib import asynccontextmanager
-import logging
-from app.tg_bot.bot import TelegramBot
 import asyncio
+import logging
+from contextlib import asynccontextmanager
+
+from app.database.db import Database
+from app.tg_bot.bot import TelegramBot
+from app.utils.config import Settings
 from app.utils.service import setup_services
+from fastapi import FastAPI
 
 
 class Application:

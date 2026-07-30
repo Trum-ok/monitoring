@@ -1,7 +1,8 @@
-from sqlalchemy import String, DateTime, Index, Integer, Text
-from datetime import datetime, UTC
-from sqlalchemy.orm import Mapped, mapped_column
+from datetime import UTC, datetime
+
 from app.database.db import Base
+from sqlalchemy import DateTime, Index, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class Error(Base):

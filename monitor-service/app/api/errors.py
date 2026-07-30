@@ -1,10 +1,10 @@
 import logging
 
-from fastapi import APIRouter, Depends
-from app.api.domain import ErrorIngestSchema
 from app.api.deps import get_errors_service, get_telegram_notifier
+from app.api.domain import ErrorIngestSchema
 from app.services.errors_service import ErrorsService
 from app.tg_bot.bot import TelegramBot
+from fastapi import APIRouter, Depends
 
 router = APIRouter(prefix="/api")
 logger = logging.getLogger(__name__)
