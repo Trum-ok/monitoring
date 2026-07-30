@@ -36,5 +36,5 @@ class Database:
 
     def session(self):
         if not self.session_factory:
-            raise RuntimeError("Database is not connected. Call connect() first.")
+            raise RuntimeError("Database is not connected. Call on_startup() first.")
         return self.session_factory()
