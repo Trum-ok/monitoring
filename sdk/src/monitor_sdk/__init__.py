@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+import threading
 import types
 
 from .client import MonitorClient
@@ -9,11 +10,12 @@ logger = logging.getLogger("monitor_sdk")
 
 _client: MonitorClient | None = None
 _previous_excepthook = sys.excepthook
+_previous_threading_excepthook = threading.excepthook
 _previous_async_handler = None
 
 
 def init(dsn: str, service_name: str = "default") -> None:
-    """Initialize global SDK hooks for sync and async unhandled exceptions.
+    """Initialize global SDK hooks for sync, threading and async unhandled exceptions.
 
     Repeated calls are ignored: the SDK keeps the client and hooks from the
     first successful :func:`init`.
@@ -30,6 +32,7 @@ def init(dsn: str, service_name: str = "default") -> None:
 
     _client = MonitorClient(dsn=dsn, service_name=service_name)
     sys.excepthook = _global_excepthook
+    threading.excepthook = _threading_excepthook
 
     try:
         loop = asyncio.get_running_loop()
@@ -54,6 +57,12 @@ def _global_excepthook(
     if _client is not None and issubclass(exc_type, Exception):
         _client.capture_exception(exc_type, exc_value, exc_tb)
     _previous_excepthook(exc_type, exc_value, exc_tb)
+
+
+def _threading_excepthook(args: threading.ExceptHookArgs) -> None:
+    if _client is not None and args.exc_value is not None and issubclass(args.exc_type, Exception):
+        _client.capture_exception(args.exc_type, args.exc_value, args.exc_traceback)
+    _previous_threading_excepthook(args)
 
 
 def _async_exception_handler(loop: asyncio.AbstractEventLoop, context: dict[str, object]) -> None:
