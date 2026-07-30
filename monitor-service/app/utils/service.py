@@ -13,5 +13,6 @@ class Service:
         self.errors_service = ErrorsService(app)
 
 
-def setup_services(app: "Application"):
+def setup_services(app: "Application") -> Service:
     app.services = Service(app)
+    return app.services

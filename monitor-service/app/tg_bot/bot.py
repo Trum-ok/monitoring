@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from functools import cached_property
 from typing import Any
 
@@ -10,7 +11,6 @@ from app.utils.message_templates import build_error_alert_message
 class TelegramBot:
     def __init__(
         self,
-        app: Any,
         token: str,
         chat_id: str,
         throttle_sec: float,
@@ -20,8 +20,9 @@ class TelegramBot:
         parse_mode: str,
         queue_maxsize: int,
         max_traceback_chars: int,
+        on_delivered: Callable[[str], Awaitable[None]] | None = None,
     ):
-        self.app = app
+        self.on_delivered = on_delivered
         self.token = token
         self.chat_id = chat_id
         self.throttle_sec = throttle_sec
@@ -65,10 +66,11 @@ class TelegramBot:
                 parse_mode = str(payload.get("parse_mode", self.parse_mode))
 
                 send_result = await self.send_message_with_retry(text, chat_id, parse_mode)
-                if send_result and payload.get("signature_hash"):
-                    await self.app.services.errors_service.mark_notified(
-                        str(payload["signature_hash"])
-                    )
+                if send_result:
+                    signature_hash = payload.get("signature_hash")
+
+                    if signature_hash and self.on_delivered is not None:
+                        await self.on_delivered(signature_hash)
 
                 self.queue.task_done()
                 await asyncio.sleep(min_send_interval)
