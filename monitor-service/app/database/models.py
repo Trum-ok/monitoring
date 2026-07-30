@@ -16,7 +16,7 @@ class Error(Base):
     traceback_preview: Mapped[str] = mapped_column(Text)
     count: Mapped[int] = mapped_column(Integer, default=1)
     last_notified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    first_seen_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(UTC))
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC))
 
     __table_args__ = (
         Index("idx_signature_hash", signature_hash),
