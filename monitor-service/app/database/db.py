@@ -11,7 +11,6 @@ class Database:
     def __init__(self):
         self.engine: AsyncEngine | None = None
         self.session_factory = None
-        self.base = Base
         self.logger = logging.getLogger(__name__)
 
     async def on_startup(self, db_path: str) -> None:
