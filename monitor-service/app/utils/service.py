@@ -1,18 +1,12 @@
-import typing
-
-if typing.TYPE_CHECKING:
-    from app.application import Application
+from app.database.db import Database
+from app.services.errors_service import ErrorsService
+from app.tg_bot.bot import TelegramBot
 
 
 class Service:
-    def __init__(self, app: "Application"):
-        from app.services.errors_service import ErrorsService
-
-        # Reuse single runtime Telegram bot instance from Application.
-        self.telegram_notifier = app.telegram_bot
-        self.errors_service = ErrorsService(app)
-
-
-def setup_services(app: "Application") -> Service:
-    app.services = Service(app)
-    return app.services
+    def __init__(self, telegram_bot: TelegramBot, database: Database, alert_cooldown_minutes: int):
+        self.telegram_notifier = telegram_bot
+        self.errors_service = ErrorsService(
+            database=database,
+            alert_cooldown_minutes=alert_cooldown_minutes,
+        )

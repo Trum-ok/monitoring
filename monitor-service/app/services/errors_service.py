@@ -1,23 +1,21 @@
 import logging
-import typing
 from datetime import UTC, datetime, timedelta
 
 from app.api.domain import ErrorIngestSchema
+from app.database.db import Database
 from app.database.models import Error
 from sqlalchemy import select, update
 from sqlalchemy.dialects.sqlite import insert
 
-if typing.TYPE_CHECKING:
-    from app.application import Application
-
 
 class ErrorsService:
-    def __init__(self, app: "Application"):
-        self.app = app
+    def __init__(self, database: Database, alert_cooldown_minutes: int):
+        self.database = database
+        self.alert_cooldown_minutes = alert_cooldown_minutes
         self.logger = logging.getLogger(__name__)
 
     async def upsert_error(self, error: ErrorIngestSchema) -> tuple[bool, int, str | None]:
-        async with self.app.database.session() as session:
+        async with self.database.session() as session:
             self.logger.info(f"Upserting error: {error}")
 
             upsert_stmt = (
@@ -83,12 +81,12 @@ class ErrorsService:
         if last_notified_at.tzinfo is None:
             last_notified_at = last_notified_at.replace(tzinfo=UTC)
 
-        cooldown = timedelta(minutes=self.app.settings.alert_cooldown_minutes)
+        cooldown = timedelta(minutes=self.alert_cooldown_minutes)
         return datetime.now(UTC) - last_notified_at >= cooldown
 
     async def mark_notified(self, signature_hash: str) -> None:
         """Persist current notification timestamp after successful alert send."""
-        async with self.app.database.session() as session:
+        async with self.database.session() as session:
             stmt = (
                 update(Error)
                 .where(Error.signature_hash == signature_hash)
