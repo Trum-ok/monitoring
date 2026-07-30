@@ -2,7 +2,6 @@
 name = "monitor-service"
 version = "0.1.0"
 description = "Error monitoring service with Telegram alerts"
-readme = "../README.md"
 requires-python = ">=3.13"
 license = "AGPL-3.0-or-later"
 
@@ -18,5 +17,14 @@ dependencies = [
     "aiosqlite>=0.21.0,<1.0.0",
 ]
 
-[tool.uv]
-package = false
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+namespaces = true

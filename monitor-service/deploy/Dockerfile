@@ -14,7 +14,7 @@ COPY monitor-service/pyproject.toml monitor-service/pyproject.toml
 COPY sdk/pyproject.toml sdk/pyproject.toml
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-dev --package monitor-service
+    uv sync --locked --no-dev --no-install-project --package monitor-service
 
 
 FROM python:3.13.14-slim

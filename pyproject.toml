@@ -12,8 +12,55 @@ package = false
 [tool.uv.workspace]
 members = ["monitor-service", "sdk"]
 
+[tool.uv.sources]
+monitor-service = { workspace = true }
+monitor-sdk = { workspace = true }
+
 [dependency-groups]
 dev = [
+    "monitor-service",
+    "monitor-sdk",
     "build>=1.2.0,<2.0.0",
     "ruff>=0.6.0",
+    "isort>=8.0.1",
+    "ty>=0.0.63",
+    "black>=26.5.1",
+]
+
+[tool.black]
+target-version = ["py313"]
+extend-exclude = 'env|.env|venv|.venv'
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "B",
+    "C4",
+    "UP",
+]
+ignore = [
+    "I001",
+    "E501",
+    "B008",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+known_third_party = ["alembic"]
+skip_glob = [
+    "services/*/app/static/*",
+    "scripts/*",
 ]

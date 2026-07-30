@@ -13,7 +13,7 @@
 3. Telegram Bot Token и Chat ID.
 
 В вашем Python-проекте:
-1. Python 3.10+.
+1. Python 3.13+ (требование `monitor-sdk`).
 2. Доступ к URL monitor-service.
 
 ## 2. Куда положить файлы на сервере
@@ -170,16 +170,20 @@ docker compose down
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Поднять окружение сразу для обоих проектов:
+Поднять окружение:
 
 ```bash
-uv sync --all-packages
+uv sync
 ```
 
-Только зависимости сервиса:
+Создаётся один общий `.venv` в корне репозитория. `monitor-service` и `sdk` входят
+в dev-группу корневого проекта и ставятся в editable-режиме, поэтому `import app`,
+`import main` и `import monitor_sdk` работают без правки `PYTHONPATH`.
+
+Только прод-зависимости сервиса, без dev-инструментов и SDK (так собирается образ):
 
 ```bash
-uv sync --package monitor-service
+uv sync --no-dev --no-install-project --package monitor-service
 ```
 
 Запуск сервиса локально:
