@@ -4,7 +4,7 @@ import sys
 import threading
 import types
 
-from .client import MonitorClient
+from .client import FLUSH_TIMEOUT_SEC, MonitorClient
 
 logger = logging.getLogger("monitor_sdk")
 
@@ -51,6 +51,12 @@ def init(dsn: str, service_name: str = "default") -> None:
             "will be captured via the fallback log handler. Call monitor_sdk.setup_asyncio() "
             "inside the loop for direct capture."
         )
+
+
+def flush(timeout: float = FLUSH_TIMEOUT_SEC) -> None:
+    """Block until queued monitoring events are sent or timeout expires."""
+    if _client is not None:
+        _client.flush(timeout)
 
 
 def setup_asyncio() -> None:
