@@ -3,7 +3,7 @@ import logging
 from functools import cached_property
 from typing import Any
 
-import aiohttp
+import httpx
 from app.utils.message_templates import build_error_alert_message
 
 
@@ -30,7 +30,7 @@ class TelegramBot:
         self.retry_backoff_max_sec = retry_backoff_max_sec
         self.parse_mode = parse_mode
         self.max_traceback_chars = max(1, min(max_traceback_chars, 2048))
-        self.session: aiohttp.ClientSession | None = None
+        self.session: httpx.AsyncClient | None = None
         self.queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=queue_maxsize)
         self.worker_task: asyncio.Task[None] | None = None
         self.logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class TelegramBot:
     async def start(self) -> None:
         self.logger.info("Starting Telegram bot...")
         if self.session is None:
-            self.session = aiohttp.ClientSession()
+            self.session = httpx.AsyncClient()
         self.worker_task = asyncio.create_task(self._worker())
         self.logger.info("Telegram bot started")
 
@@ -111,26 +111,30 @@ class TelegramBot:
             self.logger.error("Telegram session is not initialized")
             return False, None
         try:
-            async with self.session.post(url, json=payload) as response:
-                data = await response.json(content_type=None)
-                if response.status == 200:
-                    return True, None
-                if response.status == 429:
-                    retry_after = (
-                        data.get("parameters", {}).get("retry_after")
-                        if isinstance(data, dict)
-                        else None
-                    )
-                    self.logger.warning("Telegram rate limited: retry_after=%s", retry_after)
-                    return False, float(retry_after) if retry_after is not None else None
-                if response.status >= 500:
-                    self.logger.warning("Telegram transient server error: %s", response.status)
-                    return False, None
+            response = await self.session.post(url, json=payload)
+            try:
+                data: Any = response.json()
+            except ValueError:
+                data = response.text
 
-                self.logger.error(
-                    "Failed to send message to Telegram: %s %s", response.status, data
+            if response.status_code == 200:
+                return True, None
+            if response.status_code == 429:
+                retry_after = (
+                    data.get("parameters", {}).get("retry_after")
+                    if isinstance(data, dict)
+                    else None
                 )
+                self.logger.warning("Telegram rate limited: retry_after=%s", retry_after)
+                return False, float(retry_after) if retry_after is not None else None
+            if response.status_code >= 500:
+                self.logger.warning("Telegram transient server error: %s", response.status_code)
                 return False, None
+
+            self.logger.error(
+                "Failed to send message to Telegram: %s %s", response.status_code, data
+            )
+            return False, None
         except Exception as exc:
             self.logger.error("Failed to send message to Telegram: %s", exc)
             return False, None
@@ -144,6 +148,6 @@ class TelegramBot:
             except asyncio.CancelledError:
                 pass
         if self.session is not None:
-            await self.session.close()
+            await self.session.aclose()
             self.session = None
         self.logger.info("Telegram bot stopped")
