@@ -60,7 +60,9 @@ class MonitorClient:
         self.service_name = service_name
         self.max_traceback_chars = max_traceback_chars
 
-    def _extract_signature_source(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
+    def _extract_signature_source(
+        self, exc_type: type[Exception], exc_tb: types.TracebackType | None
+    ) -> str:
         if exc_tb is None:
             return f"{self.service_name}:unknown:0:unknown:{exc_type.__name__}"
 
@@ -74,7 +76,9 @@ class MonitorClient:
         funcname = frame.f_code.co_name
         return f"{self.service_name}:{module}:{lineno}:{funcname}:{exc_type.__name__}"
 
-    def _generate_signature(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
+    def _generate_signature(
+        self, exc_type: type[Exception], exc_tb: types.TracebackType | None
+    ) -> str:
         source = self._extract_signature_source(exc_type, exc_tb)
         return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
@@ -85,7 +89,7 @@ class MonitorClient:
         exc_tb: types.TracebackType | None,
     ) -> str:
         rendered = "".join(traceback.format_exception(exc_type, exc_value, exc_tb))
-        return rendered[-self.max_traceback_chars:]
+        return rendered[-self.max_traceback_chars :]
 
     @cached_property
     def _ingest_url(self) -> str:

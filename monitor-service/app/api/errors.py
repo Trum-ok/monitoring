@@ -9,6 +9,7 @@ from app.tg_bot.bot import TelegramBot
 router = APIRouter(prefix="/api")
 logger = logging.getLogger(__name__)
 
+
 @router.post("/errors")
 async def ingest_error(
     error: ErrorIngestSchema,

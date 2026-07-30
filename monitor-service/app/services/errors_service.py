@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 from sqlalchemy import select, update
 from sqlalchemy.dialects.sqlite import insert
@@ -7,6 +7,7 @@ from sqlalchemy.dialects.sqlite import insert
 from app.database.models import Error
 from app.api.domain import ErrorIngestSchema
 import typing
+
 if typing.TYPE_CHECKING:
     from app.application import Application
 
@@ -54,7 +55,7 @@ class ErrorsService:
             current_count, last_notified_at = row
             is_new_error = current_count == 1
             last_notified_at_iso = (
-                last_notified_at.astimezone(timezone.utc).isoformat()
+                last_notified_at.astimezone(UTC).isoformat()
                 if isinstance(last_notified_at, datetime)
                 else None
             )
@@ -81,10 +82,10 @@ class ErrorsService:
             return True
 
         if last_notified_at.tzinfo is None:
-            last_notified_at = last_notified_at.replace(tzinfo=timezone.utc)
+            last_notified_at = last_notified_at.replace(tzinfo=UTC)
 
         cooldown = timedelta(minutes=self.app.settings.alert_cooldown_minutes)
-        return datetime.now(timezone.utc) - last_notified_at >= cooldown
+        return datetime.now(UTC) - last_notified_at >= cooldown
 
     async def mark_notified(self, signature_hash: str) -> None:
         """Persist current notification timestamp after successful alert send."""
@@ -92,7 +93,7 @@ class ErrorsService:
             stmt = (
                 update(Error)
                 .where(Error.signature_hash == signature_hash)
-                .values(last_notified_at=datetime.now(timezone.utc))
+                .values(last_notified_at=datetime.now(UTC))
             )
             await session.execute(stmt)
             await session.commit()

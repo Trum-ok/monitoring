@@ -1,7 +1,6 @@
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
-from contextlib import asynccontextmanager
 
 import logging
 
@@ -11,7 +10,7 @@ Base = declarative_base()
 class Database:
     def __init__(self):
         self.engine = None
-        self.session_factory = None 
+        self.session_factory = None
         self.base = Base
         self.logger = logging.getLogger(__name__)
 
@@ -20,21 +19,19 @@ class Database:
 
         self.engine = create_async_engine(f"sqlite+aiosqlite:///{db_path}")
         self.session_factory = async_sessionmaker(
-            self.engine, 
+            self.engine,
             expire_on_commit=False,
             autoflush=False,
-            )
-        
+        )
+
         async with self.session() as session:
             await session.execute(text("PRAGMA journal_mode=WAL"))
             await session.commit()
             self.logger.info("DB connection established")
 
-
     async def on_shutdown(self) -> None:
         self.logger.info("Closing db connection")
         await self.engine.dispose()
-
 
     def session(self):
         if not self.session_factory:
