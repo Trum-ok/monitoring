@@ -31,8 +31,10 @@ class Application:
 
     def _setup_routes(self) -> None:
         from app.api.errors import router
+        from app.api.health import router as health_router
 
         self.app.include_router(router)
+        self.app.include_router(health_router)
 
     async def on_startup(self) -> None:
         setup_services(self)
