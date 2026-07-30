@@ -1,11 +1,10 @@
-import asyncio
 import logging
 from contextlib import asynccontextmanager
 
 from app.database.db import Database
 from app.tg_bot.bot import TelegramBot
 from app.utils.config import Settings
-from app.utils.service import setup_services
+from app.utils.service import Service
 from fastapi import FastAPI
 
 
@@ -14,7 +13,6 @@ class Application:
         self.settings = settings
         self.database = Database()
         self.telegram_bot = TelegramBot(
-            app=self,
             token=self.settings.tg_bot_token,
             chat_id=self.settings.tg_chat_id,
             throttle_sec=self.settings.throttle_seconds,
@@ -25,21 +23,27 @@ class Application:
             queue_maxsize=self.settings.tg_queue_maxsize,
             max_traceback_chars=self.settings.tg_max_traceback_chars,
         )
+        self.services = Service(
+            telegram_bot=self.telegram_bot,
+            database=self.database,
+            alert_cooldown_minutes=self.settings.alert_cooldown_minutes,
+        )
+        self.telegram_bot.on_delivered = self.services.errors_service.mark_notified
         self.app = FastAPI(title="Monitoring service", version="1.0.0", lifespan=self.lifespan)
-        self.services = None
         self._setup_routes()
 
     def _setup_routes(self) -> None:
         from app.api.errors import router
+        from app.api.health import router as health_router
 
         self.app.include_router(router)
+        self.app.include_router(health_router)
 
     async def on_startup(self) -> None:
-        setup_services(self)
         logger = logging.getLogger(__name__)
         logger.info("Starting application...")
         await self.database.on_startup(self.settings.db_path)
-        asyncio.create_task(self.telegram_bot.start())
+        await self.telegram_bot.start()
         logger.info("Application started")
 
         self.app.state.services = self.services

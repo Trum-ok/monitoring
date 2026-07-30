@@ -11,7 +11,6 @@ class Database:
     def __init__(self):
         self.engine: AsyncEngine | None = None
         self.session_factory = None
-        self.base = Base
         self.logger = logging.getLogger(__name__)
 
     async def on_startup(self, db_path: str) -> None:
@@ -36,5 +35,5 @@ class Database:
 
     def session(self):
         if not self.session_factory:
-            raise RuntimeError("Database is not connected. Call connect() first.")
+            raise RuntimeError("Database is not connected. Call on_startup() first.")
         return self.session_factory()
