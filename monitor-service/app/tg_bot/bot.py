@@ -1,10 +1,9 @@
 import asyncio
-from functools import cached_property
 import logging
+from functools import cached_property
 from typing import Any
 
 import aiohttp
-
 from app.utils.message_templates import build_error_alert_message
 
 
@@ -67,7 +66,9 @@ class TelegramBot:
 
                 send_result = await self.send_message_with_retry(text, chat_id, parse_mode)
                 if send_result and payload.get("signature_hash"):
-                    await self.app.services.errors_service.mark_notified(str(payload["signature_hash"]))
+                    await self.app.services.errors_service.mark_notified(
+                        str(payload["signature_hash"])
+                    )
 
                 self.queue.task_done()
                 await asyncio.sleep(min_send_interval)
@@ -88,7 +89,7 @@ class TelegramBot:
                 break
 
             delay = min(
-                retry_after if retry_after is not None else (2 ** attempt),
+                retry_after if retry_after is not None else (2**attempt),
                 self.retry_backoff_max_sec,
             )
             self.logger.warning("Telegram send retry attempt=%s delay=%ss", attempt, delay)
@@ -96,7 +97,9 @@ class TelegramBot:
 
         return False
 
-    async def send_message(self, message: str, chat_id: int, parse_mode: str = "HTML") -> tuple[bool, float | None]:
+    async def send_message(
+        self, message: str, chat_id: int, parse_mode: str = "HTML"
+    ) -> tuple[bool, float | None]:
         """Send one Telegram message and return status plus optional retry delay."""
         url = f"{self.base_url}sendMessage"
         payload = {
@@ -124,7 +127,9 @@ class TelegramBot:
                     self.logger.warning("Telegram transient server error: %s", response.status)
                     return False, None
 
-                self.logger.error("Failed to send message to Telegram: %s %s", response.status, data)
+                self.logger.error(
+                    "Failed to send message to Telegram: %s %s", response.status, data
+                )
                 return False, None
         except Exception as exc:
             self.logger.error("Failed to send message to Telegram: %s", exc)

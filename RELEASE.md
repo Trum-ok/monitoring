@@ -16,31 +16,44 @@ SDK version is defined in:
 
 1. Update `sdk/pyproject.toml` version.
 2. Update `sdk/README.md` if public API changed.
-3. Commit changes:
+3. Refresh the workspace lockfile and build the artifacts:
 
 ```bash
-git add sdk/pyproject.toml sdk/README.md
+uv lock
+uv build --package monitor-sdk
+```
+
+4. Commit changes:
+
+```bash
+git add sdk/pyproject.toml sdk/README.md uv.lock
 git commit -m "release(sdk): vX.Y.Z"
 ```
 
-4. Create git tag:
+5. Create git tag:
 
 ```bash
 git tag -a sdk-vX.Y.Z -m "SDK release vX.Y.Z"
 git push origin main --tags
 ```
 
-5. Create GitHub Release from tag `sdk-vX.Y.Z` and attach changelog.
+6. Create GitHub Release from tag `sdk-vX.Y.Z` and attach changelog.
 
 ## Install SDK from GitHub
 
 In client projects:
 
 ```bash
-pip install "git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
+uv add "monitor-sdk @ git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
 ```
 
 Pin to tag:
+
+```bash
+uv add "monitor-sdk @ git+https://github.com/<ORG>/<REPO>.git@sdk-vX.Y.Z#subdirectory=sdk"
+```
+
+Without uv:
 
 ```bash
 pip install "git+https://github.com/<ORG>/<REPO>.git@sdk-vX.Y.Z#subdirectory=sdk"

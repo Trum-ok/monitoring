@@ -1,0 +1,30 @@
+[project]
+name = "monitor-service"
+version = "0.1.0"
+description = "Error monitoring service with Telegram alerts"
+requires-python = ">=3.13"
+license = "AGPL-3.0-or-later"
+
+dependencies = [
+    "fastapi>=0.111.0,<1.0.0",
+    "uvicorn[standard]>=0.30.0,<1.0.0",
+    "pydantic>=2.7.0,<3.0.0",
+    "pydantic-settings>=2.3.0,<3.0.0",
+    "httpx>=0.27.0,<1.0.0",
+    "sqlalchemy>=2.0.0,<3.0.0",
+    "alembic>=1.13.0,<2.0.0",
+    "aiohttp>=3.10.0,<4.0.0",
+    "aiosqlite>=0.21.0,<1.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["main"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+namespaces = true

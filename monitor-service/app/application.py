@@ -1,12 +1,12 @@
-from fastapi import FastAPI
-from app.database.db import Database
-from app.utils.config import Settings
-from contextlib import asynccontextmanager
-import logging
-from app.tg_bot.bot import TelegramBot
 import asyncio
-from app.utils.service import setup_services
+import logging
+from contextlib import asynccontextmanager
 
+from app.database.db import Database
+from app.tg_bot.bot import TelegramBot
+from app.utils.config import Settings
+from app.utils.service import setup_services
+from fastapi import FastAPI
 
 
 class Application:
@@ -25,39 +25,31 @@ class Application:
             queue_maxsize=self.settings.tg_queue_maxsize,
             max_traceback_chars=self.settings.tg_max_traceback_chars,
         )
-        self.app = FastAPI(
-            title="Monitoring service",
-            version='1.0.0',
-            lifespan=self.lifespan
-        )
+        self.app = FastAPI(title="Monitoring service", version="1.0.0", lifespan=self.lifespan)
         self.services = None
         self._setup_routes()
-
 
     def _setup_routes(self) -> None:
         from app.api.errors import router
 
         self.app.include_router(router)
 
-
     async def on_startup(self) -> None:
         setup_services(self)
         logger = logging.getLogger(__name__)
-        logger.info('Starting application...')
+        logger.info("Starting application...")
         await self.database.on_startup(self.settings.db_path)
         asyncio.create_task(self.telegram_bot.start())
-        logger.info('Application started')
+        logger.info("Application started")
 
         self.app.state.services = self.services
         self.app.state.database = self.database
-
 
     @asynccontextmanager
     async def lifespan(self, app: FastAPI):
         await self.on_startup()
         yield
         await self.on_shutdown()
-
 
     async def on_shutdown(self) -> None:
         await self.database.on_shutdown()

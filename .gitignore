@@ -1,7 +1,34 @@
+# IDE
+.vscode/
+.idea/
+
+# Python tooling
+.poetry/
+.mypy_cache/
+.pytype/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# OS
+.DS_Store
+
+# Local overrides
+*.local.*
+local/
+
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .env
 *.db
+.ruff_cache/
+

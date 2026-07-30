@@ -13,7 +13,7 @@
 3. Telegram Bot Token и Chat ID.
 
 В вашем Python-проекте:
-1. Python 3.10+.
+1. Python 3.13+ (требование `monitor-sdk`).
 2. Доступ к URL monitor-service.
 
 ## 2. Куда положить файлы на сервере
@@ -74,19 +74,25 @@ docker compose logs -f monitor-service
 ### Вариант A (рекомендуется): установка из GitHub
 
 ```bash
-pip install "git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
+uv add "monitor-sdk @ git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
 ```
 
 Пин на релизный тег:
 
 ```bash
-pip install "git+https://github.com/<ORG>/<REPO>.git@sdk-v0.1.1#subdirectory=sdk"
+uv add "monitor-sdk @ git+https://github.com/<ORG>/<REPO>.git@sdk-v0.1.1#subdirectory=sdk"
 ```
 
 ### Вариант B: локальная установка
 
 ```bash
-pip install /opt/error-monitoring/sdk
+uv add /opt/error-monitoring/sdk
+```
+
+Если в вашем проекте нет uv, работают эквиваленты на pip:
+
+```bash
+pip install "git+https://github.com/<ORG>/<REPO>.git#subdirectory=sdk"
 ```
 
 ### Инициализация SDK в коде
@@ -151,7 +157,53 @@ docker compose logs -f monitor-service
 docker compose down
 ```
 
-## 10. Лицензия и релизы
+## 10. Локальная разработка
+
+Проект использует [uv](https://docs.astral.sh/uv/). Зависимости описаны в `pyproject.toml`,
+версии зафиксированы в `uv.lock` (`requirements.txt` больше не используется).
+
+Репозиторий — uv workspace с двумя членами: `monitor-service` и `sdk`.
+
+Установка uv:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Поднять окружение:
+
+```bash
+uv sync
+```
+
+Создаётся один общий `.venv` в корне репозитория. `monitor-service` и `sdk` входят
+в dev-группу корневого проекта и ставятся в editable-режиме, поэтому `import app`,
+`import main` и `import monitor_sdk` работают без правки `PYTHONPATH`.
+
+Только прод-зависимости сервиса, без dev-инструментов и SDK (так собирается образ):
+
+```bash
+uv sync --no-dev --no-install-project --package monitor-service
+```
+
+Запуск сервиса локально:
+
+```bash
+cd monitor-service
+uv run alembic upgrade head
+uv run uvicorn main:app --reload
+```
+
+Работа с зависимостями:
+
+```bash
+uv add --package monitor-service <пакет>
+uv remove --package monitor-service <пакет>
+uv add --dev <пакет>
+uv lock --upgrade
+```
+
+## 11. Лицензия и релизы
 
 - Лицензия проекта: `AGPL-3.0-or-later` (см. файл `LICENSE`).
 - Политика версий и процесс релизов: `RELEASE.md`.

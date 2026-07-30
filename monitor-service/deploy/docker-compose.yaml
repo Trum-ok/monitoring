@@ -1,8 +1,8 @@
 services:
   monitor-service:
     build:
-      context: ..
-      dockerfile: deploy/Dockerfile
+      context: ../..
+      dockerfile: monitor-service/deploy/Dockerfile
     ports:
       - "8000:8000"
     env_file:

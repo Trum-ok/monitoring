@@ -1,8 +1,11 @@
 import asyncio
+import logging
 import sys
 import types
 
 from .client import MonitorClient
+
+logger = logging.getLogger("monitor_sdk")
 
 _client: MonitorClient | None = None
 _previous_excepthook = sys.excepthook
@@ -12,11 +15,8 @@ _previous_async_handler = None
 def init(dsn: str, service_name: str = "default") -> None:
     """Initialize global SDK hooks for sync and async unhandled exceptions.
 
-    This function should:
-    1. Create and store a global :class:`MonitorClient` instance.
-    2. Replace ``sys.excepthook`` with :func:`_global_excepthook` wrapper.
-    3. Attach :func:`_async_exception_handler` to current running event loop
-       (or loops created later by integration glue).
+    Repeated calls are ignored: the SDK keeps the client and hooks from the
+    first successful :func:`init`.
 
     Args:
         dsn: Monitor service ingest endpoint.
@@ -24,6 +24,10 @@ def init(dsn: str, service_name: str = "default") -> None:
     """
 
     global _client, _previous_async_handler
+    if _client is not None:
+        logger.warning("monitor_sdk.init() called more than once; ignoring")
+        return
+
     _client = MonitorClient(dsn=dsn, service_name=service_name)
     sys.excepthook = _global_excepthook
 
@@ -67,9 +71,7 @@ def _async_exception_handler(loop: asyncio.AbstractEventLoop, context: dict[str,
         if isinstance(exc, Exception):
             _client.capture_exception(type(exc), exc, exc.__traceback__)
         else:
-            message = str(context.get("message", "Unhandled asyncio exception"))
-            synthetic_exc = RuntimeError(message)
-            _client.capture_exception(RuntimeError, synthetic_exc, synthetic_exc.__traceback__)
+            _client.capture_message(str(context.get("message", "Unhandled asyncio exception")))
 
     if _previous_async_handler is not None:
         _previous_async_handler(loop, context)

@@ -1,7 +1,8 @@
-import typing 
+import typing
 
 if typing.TYPE_CHECKING:
     from app.application import Application
+
 
 class Service:
     def __init__(self, app: "Application"):

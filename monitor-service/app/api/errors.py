@@ -1,13 +1,14 @@
 import logging
 
-from fastapi import APIRouter, Depends
-from app.api.domain import ErrorIngestSchema
 from app.api.deps import get_errors_service, get_telegram_notifier
+from app.api.domain import ErrorIngestSchema
 from app.services.errors_service import ErrorsService
 from app.tg_bot.bot import TelegramBot
+from fastapi import APIRouter, Depends
 
 router = APIRouter(prefix="/api")
 logger = logging.getLogger(__name__)
+
 
 @router.post("/errors")
 async def ingest_error(
@@ -34,6 +35,7 @@ async def ingest_error(
             {
                 "signature_hash": error.signature_hash,
                 "signature_source": error.signature_source or "unknown",
+                "service_name": error.service_name,
                 "exc_type": error.exc_type,
                 "message": error.message,
                 "traceback_preview": error.traceback_preview,

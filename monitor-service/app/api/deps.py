@@ -1,7 +1,6 @@
-from fastapi import Request
-from app.tg_bot.bot import TelegramBot
 from app.services.errors_service import ErrorsService
-
+from app.tg_bot.bot import TelegramBot
+from fastapi import Request
 
 
 def get_telegram_notifier(request: Request) -> TelegramBot:
