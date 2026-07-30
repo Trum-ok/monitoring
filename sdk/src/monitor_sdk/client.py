@@ -62,17 +62,17 @@ class MonitorClient:
 
     def _extract_signature_source(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
         if exc_tb is None:
-            return f"{self.service_name}:unknown:0:{exc_type.__name__}"
+            return f"{self.service_name}:unknown:0:unknown:{exc_type.__name__}"
 
         last_tb = exc_tb
         while last_tb.tb_next is not None:
             last_tb = last_tb.tb_next
 
         frame = last_tb.tb_frame
-        filename = frame.f_code.co_filename
+        module = frame.f_globals.get("__name__") or frame.f_code.co_filename
         lineno = last_tb.tb_lineno
         funcname = frame.f_code.co_name
-        return f"{self.service_name}:{filename}:{lineno}:{funcname}"
+        return f"{self.service_name}:{module}:{lineno}:{funcname}:{exc_type.__name__}"
 
     def _generate_signature(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
         source = self._extract_signature_source(exc_type, exc_tb)
