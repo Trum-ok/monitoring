@@ -12,6 +12,7 @@ _client: MonitorClient | None = None
 _previous_excepthook = sys.excepthook
 _previous_threading_excepthook = threading.excepthook
 _previous_async_handler = None
+_asyncio_log_handler: logging.Handler | None = None
 
 
 def init(dsn: str, service_name: str = "default") -> None:
@@ -20,12 +21,16 @@ def init(dsn: str, service_name: str = "default") -> None:
     Repeated calls are ignored: the SDK keeps the client and hooks from the
     first successful :func:`init`.
 
+    When called outside a running asyncio loop, exceptions from asyncio tasks
+    are captured via a fallback handler on the ``asyncio`` logger; call
+    :func:`setup_asyncio` inside the loop for direct capture.
+
     Args:
         dsn: Monitor service ingest endpoint.
         service_name: Logical source service identifier.
     """
 
-    global _client, _previous_async_handler
+    global _client, _asyncio_log_handler
     if _client is not None:
         logger.warning("monitor_sdk.init() called more than once; ignoring")
         return
@@ -34,13 +39,62 @@ def init(dsn: str, service_name: str = "default") -> None:
     sys.excepthook = _global_excepthook
     threading.excepthook = _threading_excepthook
 
+    if _asyncio_log_handler is None:
+        _asyncio_log_handler = _AsyncioLogHandler()
+        logging.getLogger("asyncio").addHandler(_asyncio_log_handler)
+
     try:
-        loop = asyncio.get_running_loop()
-        _previous_async_handler = loop.get_exception_handler()
-        loop.set_exception_handler(_async_exception_handler)
+        setup_asyncio()
     except RuntimeError:
-        # No running loop at init time; sync hook is still installed.
-        _previous_async_handler = None
+        logger.info(
+            "monitor_sdk.init() called outside a running asyncio loop; asyncio exceptions "
+            "will be captured via the fallback log handler. Call monitor_sdk.setup_asyncio() "
+            "inside the loop for direct capture."
+        )
+
+
+def setup_asyncio() -> None:
+    """Install the SDK exception handler on the currently running event loop.
+
+    Use when :func:`init` was called before the loop started: call this at the
+    top of the async entrypoint. Repeated calls on the same loop are no-ops.
+
+    Raises:
+        RuntimeError: If there is no running event loop.
+    """
+
+    global _previous_async_handler
+    loop = asyncio.get_running_loop()
+    current = loop.get_exception_handler()
+    if current is _async_exception_handler:
+        return
+    _previous_async_handler = current
+    loop.set_exception_handler(_async_exception_handler)
+
+
+def _mark_captured(exc: BaseException) -> None:
+    try:
+        exc._monitor_sdk_captured = True  # ty: ignore[unresolved-attribute]
+    except Exception:
+        pass
+
+
+def _is_captured(exc: BaseException) -> bool:
+    return bool(getattr(exc, "_monitor_sdk_captured", False))
+
+
+class _AsyncioLogHandler(logging.Handler):
+    """Fallback capture of unhandled asyncio exceptions logged by the default loop handler."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        if _client is None or record.exc_info is None:
+            return
+        exc_type, exc_value, exc_tb = record.exc_info
+        if exc_type is None or exc_value is None:
+            return
+        if not issubclass(exc_type, Exception) or _is_captured(exc_value):
+            return
+        _client.capture_exception(exc_type, exc_value, exc_tb)
 
 
 def _global_excepthook(
@@ -78,6 +132,7 @@ def _async_exception_handler(loop: asyncio.AbstractEventLoop, context: dict[str,
     if _client is not None:
         exc = context.get("exception")
         if isinstance(exc, Exception):
+            _mark_captured(exc)
             _client.capture_exception(type(exc), exc, exc.__traceback__)
         else:
             _client.capture_message(str(context.get("message", "Unhandled asyncio exception")))
