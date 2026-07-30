@@ -44,7 +44,7 @@ class Application:
         logger = logging.getLogger(__name__)
         logger.info("Starting application...")
         await self.database.on_startup(self.settings.db_path)
-        asyncio.create_task(self.telegram_bot.start())
+        await self.telegram_bot.start()
         logger.info("Application started")
 
         self.app.state.services = self.services
