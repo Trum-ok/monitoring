@@ -105,6 +105,11 @@ class MonitorClient:
         except Exception:
             logger.warning("monitor ingest failed", exc_info=True)
 
+    def _send(self, payload: dict[str, str]) -> None:
+        body = json.dumps(payload).encode("utf-8")
+        thread = threading.Thread(target=self._post_payload, args=(body,), daemon=False)
+        thread.start()
+
     def capture_exception(
         self,
         exc_type: type[Exception],
@@ -113,15 +118,27 @@ class MonitorClient:
     ) -> None:
         signature_source = self._extract_signature_source(exc_type, exc_tb)
         signature_hash = self._generate_signature(exc_type, exc_tb)
-        payload = {
-            "signature_hash": signature_hash,
-            "signature_source": signature_source,
-            "service_name": self.service_name,
-            "exc_type": exc_type.__name__,
-            "message": str(exc_value),
-            "traceback_preview": self._build_traceback_preview(exc_type, exc_value, exc_tb),
-        }
+        self._send(
+            {
+                "signature_hash": signature_hash,
+                "signature_source": signature_source,
+                "service_name": self.service_name,
+                "exc_type": exc_type.__name__,
+                "message": str(exc_value),
+                "traceback_preview": self._build_traceback_preview(exc_type, exc_value, exc_tb),
+            }
+        )
 
-        body = json.dumps(payload).encode("utf-8")
-        thread = threading.Thread(target=self._post_payload, args=(body,), daemon=False)
-        thread.start()
+    def capture_message(self, message: str) -> None:
+        signature_source = f"{self.service_name}:message:{message[:200]}"
+        signature_hash = hashlib.sha256(signature_source.encode("utf-8")).hexdigest()
+        self._send(
+            {
+                "signature_hash": signature_hash,
+                "signature_source": signature_source,
+                "service_name": self.service_name,
+                "exc_type": "Message",
+                "message": message,
+                "traceback_preview": "",
+            }
+        )

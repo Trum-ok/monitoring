@@ -71,9 +71,7 @@ def _async_exception_handler(loop: asyncio.AbstractEventLoop, context: dict[str,
         if isinstance(exc, Exception):
             _client.capture_exception(type(exc), exc, exc.__traceback__)
         else:
-            message = str(context.get("message", "Unhandled asyncio exception"))
-            synthetic_exc = RuntimeError(message)
-            _client.capture_exception(RuntimeError, synthetic_exc, synthetic_exc.__traceback__)
+            _client.capture_message(str(context.get("message", "Unhandled asyncio exception")))
 
     if _previous_async_handler is not None:
         _previous_async_handler(loop, context)
