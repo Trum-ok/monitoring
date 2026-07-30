@@ -1,5 +1,5 @@
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncEngine
 from sqlalchemy.orm import declarative_base
 
 import logging
@@ -9,7 +9,7 @@ Base = declarative_base()
 
 class Database:
     def __init__(self):
-        self.engine = None
+        self.engine: AsyncEngine | None = None
         self.session_factory = None
         self.base = Base
         self.logger = logging.getLogger(__name__)
@@ -31,7 +31,8 @@ class Database:
 
     async def on_shutdown(self) -> None:
         self.logger.info("Closing db connection")
-        await self.engine.dispose()
+        if self.engine is not None:
+            await self.engine.dispose()
 
     def session(self):
         if not self.session_factory:
