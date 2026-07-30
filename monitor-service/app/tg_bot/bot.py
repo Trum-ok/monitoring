@@ -44,12 +44,22 @@ class TelegramBot:
         self.logger.info("Starting Telegram bot...")
         if self.session is None:
             self.session = httpx.AsyncClient()
-        self.worker_task = asyncio.create_task(self._worker())
+        self.worker_task = asyncio.create_task(self._worker_supervisor())
         self.logger.info("Telegram bot started")
 
     async def send_alert(self, payload: dict[str, Any]) -> None:
         """Enqueue alert payload for asynchronous delivery."""
         await self.queue.put(payload)
+
+    async def _worker_supervisor(self) -> None:
+        while True:
+            try:
+                await self._worker()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                self.logger.exception("Telegram worker crashed, restarting")
+                await asyncio.sleep(1.0)
 
     async def _worker(self) -> None:
         """Consume queue and send messages with throttling and retry policy."""
