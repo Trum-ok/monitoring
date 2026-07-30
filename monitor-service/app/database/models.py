@@ -9,6 +9,7 @@ class Error(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     signature_hash: Mapped[str] = mapped_column(String(255), index=True, unique=True)
+    service_name: Mapped[str] = mapped_column(String(255), index=True)
     exc_type: Mapped[str] = mapped_column(String(255), index=True)
     message: Mapped[str] = mapped_column(Text)
     traceback_preview: Mapped[str] = mapped_column(Text)
@@ -18,5 +19,6 @@ class Error(Base):
 
     __table_args__ = (
         Index("idx_signature_hash", signature_hash),
+        Index("idx_service_name", service_name),
         Index("idx_exc_type", exc_type),
     )

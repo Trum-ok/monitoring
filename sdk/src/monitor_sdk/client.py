@@ -54,7 +54,7 @@ class MonitorClient:
         """Create client instance.
         Args:
             dsn: Base URL of monitor-service (for example, ``http://localhost:8000``).
-            service_name: Logical source service identifier used in local diagnostics.
+            service_name: Logical source service identifier; sent with every event and mixed into the error signature.
         """
         self.dsn = validate_dsn(dsn)
         self.service_name = service_name
@@ -62,7 +62,7 @@ class MonitorClient:
 
     def _extract_signature_source(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
         if exc_tb is None:
-            return f"unknown:0:{exc_type.__name__}"
+            return f"{self.service_name}:unknown:0:{exc_type.__name__}"
 
         last_tb = exc_tb
         while last_tb.tb_next is not None:
@@ -72,7 +72,7 @@ class MonitorClient:
         filename = frame.f_code.co_filename
         lineno = last_tb.tb_lineno
         funcname = frame.f_code.co_name
-        return f"{filename}:{lineno}:{funcname}"
+        return f"{self.service_name}:{filename}:{lineno}:{funcname}"
 
     def _generate_signature(self, exc_type: type[Exception], exc_tb: types.TracebackType | None) -> str:
         source = self._extract_signature_source(exc_type, exc_tb)
@@ -116,6 +116,7 @@ class MonitorClient:
         payload = {
             "signature_hash": signature_hash,
             "signature_source": signature_source,
+            "service_name": self.service_name,
             "exc_type": exc_type.__name__,
             "message": str(exc_value),
             "traceback_preview": self._build_traceback_preview(exc_type, exc_value, exc_tb),

@@ -24,6 +24,7 @@ class ErrorsService:
                 insert(Error)
                 .values(
                     signature_hash=error.signature_hash,
+                    service_name=error.service_name,
                     exc_type=error.exc_type,
                     message=error.message,
                     traceback_preview=error.traceback_preview,
@@ -32,6 +33,7 @@ class ErrorsService:
                 .on_conflict_do_update(
                     index_elements=[Error.signature_hash],
                     set_={
+                        "service_name": error.service_name,
                         "exc_type": error.exc_type,
                         "message": error.message,
                         "traceback_preview": error.traceback_preview,

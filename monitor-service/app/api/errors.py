@@ -34,6 +34,7 @@ async def ingest_error(
             {
                 "signature_hash": error.signature_hash,
                 "signature_source": error.signature_source or "unknown",
+                "service_name": error.service_name,
                 "exc_type": error.exc_type,
                 "message": error.message,
                 "traceback_preview": error.traceback_preview,
