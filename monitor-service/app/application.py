@@ -6,6 +6,8 @@ from app.tg_bot.bot import TelegramBot
 from app.utils.config import Settings
 from app.utils.service import Service
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 
 class Application:
@@ -27,17 +29,29 @@ class Application:
             telegram_bot=self.telegram_bot,
             database=self.database,
             alert_cooldown_minutes=self.settings.alert_cooldown_minutes,
+            event_retention_days=self.settings.event_retention_days,
+            max_events_per_error=self.settings.max_events_per_error,
+            web_page_size=self.settings.web_page_size,
         )
         self.telegram_bot.on_delivered = self.services.errors_service.mark_notified
         self.app = FastAPI(title="Monitoring service", version="1.0.0", lifespan=self.lifespan)
+        self.app.state.settings = self.settings
         self._setup_routes()
 
     def _setup_routes(self) -> None:
         from app.api.errors import router
         from app.api.health import router as health_router
+        from app.web.router import STATIC_DIR
+        from app.web.router import router as web_router
 
         self.app.include_router(router)
         self.app.include_router(health_router)
+        self.app.include_router(web_router)
+        self.app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+        @self.app.get("/", include_in_schema=False)
+        async def root() -> RedirectResponse:
+            return RedirectResponse("/ui/errors")
 
     async def on_startup(self) -> None:
         logger = logging.getLogger(__name__)

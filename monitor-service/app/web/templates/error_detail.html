@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ error.exc_type }} — Мониторинг ошибок{% endblock %}
+
+{% block content %}
+<a class="back" href="{{ back_url }}">← К списку ошибок</a>
+
+<section class="detail-header">
+    <span class="status status-{{ error.status }}">{{ error.status | status_label }}</span>
+    <h1>{{ error.exc_type }}</h1>
+    <p class="detail-message">{{ error.message }}</p>
+    {% set location = error.traceback_preview | error_location %}
+    {% if location %}<p class="error-location">{{ location }}</p>{% endif %}
+</section>
+
+<section class="actions">
+    {% for value in statuses %}
+    {% if value != error.status %}
+    <form method="post" action="/ui/errors/{{ error.id }}/status/{{ value }}?back={{ detail_url | urlencode }}">
+        <button type="submit">{{ value | status_label }}</button>
+    </form>
+    {% endif %}
+    {% endfor %}
+    <form method="post" action="/ui/errors/{{ error.id }}/delete?back={{ back_url | urlencode }}"
+          data-confirm="Удалить группу ошибок вместе со всеми вхождениями?">
+        <button type="submit" class="danger">Удалить группу</button>
+    </form>
+</section>
+
+<section class="meta">
+    <div class="meta-item">
+        <span class="meta-label">Сервис</span>
+        <span class="meta-value">{{ error.service_name }}</span>
+    </div>
+    <div class="meta-item">
+        <span class="meta-label">Всего вхождений</span>
+        <span class="meta-value">{{ error.count }}</span>
+    </div>
+    <div class="meta-item">
+        <span class="meta-label">За сутки</span>
+        <span class="meta-value">{{ day_count }}</span>
+    </div>
+    <div class="meta-item">
+        <span class="meta-label">За неделю</span>
+        <span class="meta-value">{{ week_count }}</span>
+    </div>
+    <div class="meta-item">
+        <span class="meta-label">Первое появление</span>
+        <span class="meta-value" title="{{ error.first_seen_at | format_dt }}">{{ error.first_seen_at | humanize_ago }}</span>
+    </div>
+    <div class="meta-item">
+        <span class="meta-label">Последнее появление</span>
+        <span class="meta-value" title="{{ error.last_seen_at | format_dt }}">{{ error.last_seen_at | humanize_ago }}</span>
+    </div>
+    <div class="meta-item">
+        <span class="meta-label">Последний алерт в Telegram</span>
+        <span class="meta-value" title="{{ error.last_notified_at | format_dt }}">{{ error.last_notified_at | humanize_ago }}</span>
+    </div>
+    <div class="meta-item">
+        <span class="meta-label">Статус изменён</span>
+        <span class="meta-value" title="{{ error.status_changed_at | format_dt }}">{{ error.status_changed_at | humanize_ago }}</span>
+    </div>
+    <div class="meta-item wide">
+        <span class="meta-label">Сигнатура</span>
+        <span class="meta-value mono">{{ error.signature_hash }}</span>
+    </div>
+</section>
+
+<section class="traceback-block">
+    <div class="section-head">
+        <h2>Трейсбек последнего вхождения</h2>
+        <button type="button" class="ghost" data-copy-target="traceback">Скопировать</button>
+    </div>
+    <pre class="traceback" id="traceback">{{ error.traceback_preview }}</pre>
+</section>
+
+<section class="events">
+    <div class="section-head">
+        <h2>Недавние появления</h2>
+        <span class="hint">показано {{ events | length }} из {{ stored_events }} сохранённых</span>
+    </div>
+
+    {% if events %}
+    <ul class="event-list">
+        {% for event in events %}
+        <li class="event">
+            <details>
+                <summary>
+                    <span class="event-time" title="{{ event.occurred_at | format_dt }}">{{ event.occurred_at | format_dt }}</span>
+                    <span class="event-ago">{{ event.occurred_at | humanize_ago }}</span>
+                    <span class="event-message">{{ event.message | first_line | truncate(140) }}</span>
+                </summary>
+                <pre class="traceback">{{ event.traceback_preview }}</pre>
+            </details>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">Отдельные вхождения ещё не записаны. Они появятся здесь после следующей ошибки.</p>
+    {% endif %}
+</section>
+{% endblock %}

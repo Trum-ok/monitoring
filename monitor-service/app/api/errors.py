@@ -21,12 +21,15 @@ async def ingest_error(
         error.signature_hash,
         error.exc_type,
     )
-    is_new_error, current_count, last_notified_at = await errors_service.upsert_error(error)
-    should_notify = errors_service.should_notify(is_new_error, last_notified_at)
+    is_new_error, current_count, last_notified_at, was_reopened = await errors_service.upsert_error(
+        error
+    )
+    should_notify = errors_service.should_notify(is_new_error, last_notified_at, was_reopened)
     logger.info(
-        "Ingest processed signature=%s count=%s queued_for_notification=%s",
+        "Ingest processed signature=%s count=%s reopened=%s queued_for_notification=%s",
         error.signature_hash,
         current_count,
+        was_reopened,
         should_notify,
     )
 
@@ -48,5 +51,6 @@ async def ingest_error(
         "is_new_error": is_new_error,
         "current_count": current_count,
         "last_notified_at": last_notified_at,
+        "was_reopened": was_reopened,
         "queued_for_notification": should_notify,
     }
