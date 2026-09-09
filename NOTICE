@@ -1,16 +1,48 @@
 Error Monitoring Platform (monitor-service + monitor-sdk)
-Copyright (c) 2026 Monitoring Team
+
+Copyright (c) 2026 Monitoring Team (original work)
+Copyright (c) 2026 Artamonov Arkadii (modifications)
 
 This project is licensed under the GNU Affero General Public License v3.0
 (or any later version), see the LICENSE file for full text.
 
-Third-party components are used under their own licenses, including but not limited to:
+MODIFICATIONS
+-------------
+This is a modified version (fork) of the original Error Monitoring Platform
+by the Monitoring Team:
+
+    https://github.com/krionefishy/monitoring
+
+whose last upstream revision incorporated here is dated 2026-05-31.
+
+Modified by Artamonov Arkadii, starting 2026-07-27. Changes include, among
+others: migration to uv and Python 3.13+, a monorepo layout with an editable
+monitor-service package, a reworked SDK (DSN validation, service_name support,
+module-based error signatures, configurable traceback trimming, thread and
+asyncio exception hooks, capture_message), a queue-and-worker delivery model,
+and a web UI at /ui.
+
+The full change history is available in the Git history of this repository.
+
+THIRD-PARTY COMPONENTS
+----------------------
+Third-party components are used under their own licenses, including but not
+limited to:
+
+monitor-service:
 - FastAPI (MIT)
-- Uvicorn (BSD-3-Clause)
+- Uvicorn, with the [standard] extras (BSD-3-Clause)
 - Pydantic / pydantic-settings (MIT)
-- SQLAlchemy / Alembic (MIT)
-- aiohttp (Apache-2.0)
+- SQLAlchemy (MIT)
+- Alembic (MIT)
+- httpx (BSD-3-Clause)
+- aiosqlite (MIT)
+- Jinja2 (BSD-3-Clause)
+
+monitor-sdk:
 - requests (Apache-2.0)
 
+TRADEMARKS
+----------
 No trademark rights are granted by this NOTICE.
 Project name, logos, and brand assets may be subject to separate trademark rules.
