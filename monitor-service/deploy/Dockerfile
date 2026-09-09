@@ -1,5 +1,5 @@
 # Build context: repository root (see deploy/docker-compose.yaml)
-FROM python:3.13.14-slim AS builder
+FROM python:3.14.7-slim AS builder
 
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/uv
 
@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-install-project --package monitor-service
 
 
-FROM python:3.13.14-slim
+FROM python:3.14.7-slim
 
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
