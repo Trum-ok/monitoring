@@ -1,5 +1,8 @@
 # Инструкция по установке: Monitor Service + SDK
 
+[![CI](https://github.com/Trum-ok/monitoring/actions/workflows/ci.yaml/badge.svg)](https://github.com/Trum-ok/monitoring/actions/workflows/ci.yaml)
+[![Python](https://img.shields.io/badge/python-3.13%2B-blue?logo=python&logoColor=white)](https://www.python.org/downloads/)
+
 Этот гайд для пользователя, который хочет:
 1. Поднять `monitor-service` на сервере.
 2. Подключить SDK в свой Python-проект.
