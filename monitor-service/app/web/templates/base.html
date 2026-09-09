@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Мониторинг ошибок{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='app.css') }}">
+    <link rel="icon" href="data:,">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" href="/ui/errors">Мониторинг ошибок</a>
+    <div class="topbar-actions">
+        <label class="refresh">
+            <input type="checkbox" id="auto-refresh">
+            автообновление
+        </label>
+    </div>
+</header>
+
+<main class="content">
+    {% block content %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', path='app.js') }}"></script>
+</body>
+</html>

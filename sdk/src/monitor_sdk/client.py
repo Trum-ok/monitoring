@@ -1,7 +1,10 @@
+import atexit
 import hashlib
 import json
 import logging
+import queue
 import threading
+import time
 import traceback
 import types
 from functools import cached_property
@@ -12,6 +15,8 @@ import requests
 logger = logging.getLogger("monitor_sdk")
 
 ALLOWED_DSN_SCHEMES = frozenset({"http", "https"})
+QUEUE_MAXSIZE = 100
+FLUSH_TIMEOUT_SEC = 2.0
 
 
 def validate_dsn(dsn: str) -> str:
@@ -59,6 +64,13 @@ class MonitorClient:
         self.dsn = validate_dsn(dsn)
         self.service_name = service_name
         self.max_traceback_chars = max_traceback_chars
+        self._queue: queue.Queue[bytes] = queue.Queue(maxsize=QUEUE_MAXSIZE)
+        self._pending = 0
+        self._pending_lock = threading.Lock()
+        self._worker: threading.Thread | None = None
+        self._worker_lock = threading.Lock()
+
+        atexit.register(self.flush)
 
     def _extract_signature_source(
         self, exc_type: type[Exception], exc_tb: types.TracebackType | None
@@ -109,10 +121,51 @@ class MonitorClient:
         except Exception:
             logger.warning("monitor ingest failed", exc_info=True)
 
+    def _ensure_worker(self) -> None:
+        if self._worker is not None and self._worker.is_alive():
+            return
+
+        with self._worker_lock:
+            if self._worker is None or not self._worker.is_alive():
+                self._worker = threading.Thread(
+                    target=self._worker_loop,
+                    name="monitor-sdk-sender",
+                    daemon=True,
+                )
+                self._worker.start()
+
+    def _worker_loop(self) -> None:
+        while True:
+            body = self._queue.get()
+            try:
+                self._post_payload(body)
+            finally:
+                with self._pending_lock:
+                    self._pending -= 1
+                self._queue.task_done()
+
+    def flush(self, timeout: float = FLUSH_TIMEOUT_SEC) -> None:
+        """Block until queued events are sent or timeout expires."""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            with self._pending_lock:
+                if self._pending == 0:
+                    return
+
+            time.sleep(0.05)
+
     def _send(self, payload: dict[str, str]) -> None:
         body = json.dumps(payload).encode("utf-8")
-        thread = threading.Thread(target=self._post_payload, args=(body,), daemon=False)
-        thread.start()
+        self._ensure_worker()
+        with self._pending_lock:
+            self._pending += 1
+
+        try:
+            self._queue.put_nowait(body)
+        except queue.Full:
+            with self._pending_lock:
+                self._pending -= 1
+            logger.warning("monitor ingest queue full, dropping event")
 
     def capture_exception(
         self,

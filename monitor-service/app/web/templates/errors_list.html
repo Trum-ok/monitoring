@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="summary">
+    <div class="card">
+        <span class="card-label">Групп ошибок</span>
+        <span class="card-value">{{ summary.groups }}</span>
+    </div>
+    <div class="card">
+        <span class="card-label">Вхождений за период</span>
+        <span class="card-value">{{ summary.occurrences }}</span>
+    </div>
+    <div class="card">
+        <span class="card-label">Сервисов</span>
+        <span class="card-value">{{ summary.services }}</span>
+    </div>
+    <div class="card">
+        <span class="card-label">Новых за сутки</span>
+        <span class="card-value">{{ summary.new_groups }}</span>
+    </div>
+</section>
+
+<form class="filters" method="get" action="/ui/errors">
+    <input type="search" name="q" value="{{ filters.q }}" placeholder="Поиск по тексту, типу, сервису">
+
+    <select name="status" data-autosubmit>
+        <option value="">Все статусы</option>
+        {% for value in statuses %}
+        <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ value | status_label }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="service" data-autosubmit>
+        <option value="">Все сервисы</option>
+        {% for value in services %}
+        <option value="{{ value }}" {% if filters.service == value %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="window" data-autosubmit>
+        {% for value, (label, _) in windows.items() %}
+        <option value="{{ value }}" {% if filters.window == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+
+    <input type="hidden" name="sort" value="{{ filters.sort }}">
+    <button type="submit">Применить</button>
+    <a class="reset" href="/ui/errors">Сбросить</a>
+</form>
+
+<div class="sorting">
+    <span>Сортировка:</span>
+    {% for value, label in [("occurrences", "по вхождениям"), ("last_seen", "по последнему"), ("first_seen", "по первому")] %}
+    <a class="sort-link {% if filters.sort == value %}active{% endif %}"
+       href="{{ request.url.include_query_params(sort=value, page=1) }}">{{ label }}</a>
+    {% endfor %}
+</div>
+
+{% if groups.items %}
+<div class="table-wrap">
+<table class="errors">
+    <thead>
+    <tr>
+        <th>Статус</th>
+        <th class="num">Вхождений</th>
+        <th>Ошибка</th>
+        <th>Сервис</th>
+        <th>Первое</th>
+        <th>Последнее</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for group in groups.items %}
+    {% set error = group.error %}
+    <tr>
+        <td><span class="status status-{{ error.status }}">{{ error.status | status_label }}</span></td>
+        <td class="num">
+            <span class="count-window" title="вхождений за выбранный период">{{ group.window_count }}</span>
+            <span class="count-total" title="вхождений за всё время">всего {{ error.count }}</span>
+        </td>
+        <td class="error-cell">
+            <a class="error-title" href="/ui/errors/{{ error.id }}?back={{ back_url | urlencode }}">
+                {{ error.exc_type }}: {{ error.message | first_line | truncate(120) }}
+            </a>
+            {% set location = error.traceback_preview | error_location %}
+            {% if location %}<span class="error-location">{{ location }}</span>{% endif %}
+        </td>
+        <td>{{ error.service_name }}</td>
+        <td title="{{ error.first_seen_at | format_dt }}">{{ error.first_seen_at | humanize_ago }}</td>
+        <td title="{{ error.last_seen_at | format_dt }}">{{ error.last_seen_at | humanize_ago }}</td>
+        <td>
+            <div class="row-actions">
+            {% if error.status != "acknowledged" %}
+            <form method="post" action="/ui/errors/{{ error.id }}/status/acknowledged?back={{ back_url | urlencode }}">
+                <button type="submit" class="ghost" title="Взять в работу">В работу</button>
+            </form>
+            {% endif %}
+            {% if error.status != "resolved" %}
+            <form method="post" action="/ui/errors/{{ error.id }}/status/resolved?back={{ back_url | urlencode }}">
+                <button type="submit" class="ghost" title="Пометить решённой">Решена</button>
+            </form>
+            {% else %}
+            <form method="post" action="/ui/errors/{{ error.id }}/status/open?back={{ back_url | urlencode }}">
+                <button type="submit" class="ghost" title="Вернуть в открытые">Открыть</button>
+            </form>
+            {% endif %}
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<nav class="pagination">
+    {% if groups.has_prev %}
+    <a href="{{ request.url.include_query_params(page=groups.page - 1) }}">← Назад</a>
+    {% else %}
+    <span class="disabled">← Назад</span>
+    {% endif %}
+    <span class="page-info">Страница {{ groups.page }} из {{ groups.pages }} · всего {{ groups.total }}</span>
+    {% if groups.has_next %}
+    <a href="{{ request.url.include_query_params(page=groups.page + 1) }}">Вперёд →</a>
+    {% else %}
+    <span class="disabled">Вперёд →</span>
+    {% endif %}
+</nav>
+{% else %}
+<p class="empty">Ошибок по текущим фильтрам нет.</p>
+{% endif %}
+{% endblock %}
