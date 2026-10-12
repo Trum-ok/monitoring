@@ -20,11 +20,11 @@ monitor-sdk = { workspace = true }
 dev = [
     "monitor-service",
     "monitor-sdk",
-    "build>=1.2.0,<2.0.0",
-    "ruff>=0.6.0",
-    "isort>=8.0.1",
-    "ty>=0.0.63",
-    "black>=26.5.1",
+    "build>=1.6.1,<2.0.0",
+    "ruff>=0.16.10",
+    "isort>=9.0.2",
+    "ty>=0.0.85",
+    "black>=26.10.0",
 ]
 
 [tool.black]
